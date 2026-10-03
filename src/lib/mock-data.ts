@@ -1,17 +1,19 @@
 // DEMO DATA — all names, numbers and addresses are fictional.
 // Replace with API calls (see src/lib/store.ts) when the backend is available.
-import type { Device, Household, Incident, HazardType, RiskLevel, Outcome } from "./types";
+import type { Device, Household, Incident, HazardType, RiskLevel, Outcome, RegisteredContact, AccessibilityTag } from "./types";
 
 const H = (
   n: number, name: string, contact: string, address: string, barangay: string, landmark: string,
   road: Household["roadAccessibility"], cons: Household["houseConstruction"], notes: string, lat: number, lng: number,
 ): Household => ({
-  id: `HH-${String(n).padStart(3, "0")}`, homeownerName: name, contactNumber: contact, address, barangay, landmark,
+  id: `HH-${String(n).padStart(3, "0")}`, homeownerName: name,
+  registeredContacts: [{ contactId: `C-${n}-1`, name, relationshipToHousehold: "Homeowner", contactNumber: contact, smsEnabled: true, isPrimaryContact: true, accessibilityTags: [] }],
+  address, barangay, landmark,
   roadAccessibility: road, houseConstruction: cons, accessibilityNotes: notes,
   deviceId: `NODE-${String(n).padStart(3, "0")}`, latitude: lat, longitude: lng,
 });
 
-export const households: Household[] = [
+const baseHouseholds: Household[] = [
   H(1, "Juan Dela Cruz", "0917 555 0101", "123 Mabini Street", "Brgy. Commonwealth", "Near Commonwealth Elementary School", "Normal", "Concrete", "Gate opens inward. Water hydrant 40 m north.", 14.6912, 121.0781),
   H(2, "Ana Reyes", "0918 555 0102", "45 Rizal Road", "Brgy. Commonwealth", "Across Reyes Sari-sari Store", "Narrow", "Mixed", "Street width approx. 3 m; parked tricycles common.", 14.6935, 121.0842),
   H(3, "Maria Santos", "0919 555 0103", "88 Bonifacio Road", "Brgy. Holy Spirit", "Beside Holy Spirit Chapel", "Normal", "Concrete", "Two-storey; elderly resident on ground floor.", 14.6871, 121.0903),
@@ -23,6 +25,18 @@ export const households: Household[] = [
   H(9, "Josefina Cruz", "0925 555 0109", "3 Jacinto Extension", "Brgy. Commonwealth", "End of Jacinto Ext., near creek", "Limited", "Light Materials", "Creek on east side; footbridge only.", 14.6826, 121.0752),
   H(10, "Eduardo Ramos", "0926 555 0110", "101 Magsaysay Blvd", "Brgy. Holy Spirit", "Near Holy Spirit Public Market", "Normal", "Concrete", "Market traffic heavy 5–9 AM.", 14.6861, 121.0949),
 ];
+
+// Extra fictional contacts (numbers use the 555 demo range).
+const C = (id: string, name: string, rel: string, num: string, sms: boolean, tags: AccessibilityTag[] = []): RegisteredContact =>
+  ({ contactId: id, name, relationshipToHousehold: rel, contactNumber: num, smsEnabled: sms, isPrimaryContact: false, accessibilityTags: tags });
+const extra: Record<string, RegisteredContact[]> = {
+  "HH-003": [C("C-3-2", "Pedro Santos", "Son", "0919 555 0203", true, ["Senior"]), C("C-3-3", "Ana Santos", "Daughter", "0919 555 0303", true)],
+  "HH-004": [C("C-4-2", "Lourdes Garcia", "Mother", "", false, ["Senior", "Mobility Assistance"]), C("C-4-3", "Miguel Garcia", "Son", "0920 555 0204", true, ["Child/Minor"]), C("C-4-4", "Celia Garcia", "Sister", "0920 555 0304", true, ["PWD", "Hearing Assistance"])],
+  "HH-002": [C("C-2-2", "Benjie Reyes", "Spouse", "0918 555 0202", true)],
+  "HH-007": [C("C-7-2", "Nestor Aquino", "Spouse", "0923 555 0207", true, ["Senior"]), C("C-7-3", "Lina Aquino", "Granddaughter", "", false, ["Child/Minor", "Visual Assistance"])],
+  "HH-009": [C("C-9-2", "Rodel Cruz", "Nephew", "0925 555 0209", true)],
+};
+export const households: Household[] = baseHouseholds.map((h) => ({ ...h, registeredContacts: [...h.registeredContacts, ...(extra[h.id] ?? [])] }));
 
 const T = (h: number, m: number, day = "2026-09-29") => `${day}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+08:00`;
 

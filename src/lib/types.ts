@@ -8,10 +8,24 @@ export type Outcome = "Pending" | "Resolved" | "False Alert";
 export type DeviceStatus = "Online" | "Offline";
 export type SensorStatus = "Normal" | "Warning" | "Critical" | "Offline";
 
+export const ACCESSIBILITY_TAGS = ["Senior", "PWD", "Child/Minor", "Mobility Assistance", "Hearing Assistance", "Visual Assistance"] as const;
+export type AccessibilityTag = (typeof ACCESSIBILITY_TAGS)[number];
+
+// Sensitive: shown only inside authorized BFP views, never in map markers/popups or URLs.
+export interface RegisteredContact {
+  contactId: string;
+  name: string;
+  relationshipToHousehold: string;
+  contactNumber: string;
+  smsEnabled: boolean;
+  isPrimaryContact: boolean;
+  accessibilityTags: AccessibilityTag[];
+}
+
 export interface Household {
   id: string;
   homeownerName: string;
-  contactNumber: string;
+  registeredContacts: RegisteredContact[];
   address: string;
   barangay: string;
   landmark: string;
