@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type Tone = "critical" | "warning" | "normal" | "offline";
@@ -97,4 +97,47 @@ export function Table({ head, children, onSort, sort }: { head: { key: string; l
 
 export function DemoNote() {
   return <p className="mt-3 text-xs text-muted-foreground">Demo data — all names, contact numbers and addresses are fictional.</p>;
+}
+
+export const PAGE_SIZE = 10;
+
+/** Fixed-size pagination over already-filtered rows. Resets to page 1 when resetKey changes; clamps invalid pages. */
+export function usePagination<T>(rows: T[], resetKey: string) {
+  const [page, setPage] = useState(1);
+  const [lastKey, setLastKey] = useState(resetKey);
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  let current = page;
+  if (lastKey !== resetKey) { setLastKey(resetKey); setPage(1); current = 1; }
+  if (current > pages) current = 1;
+  const start = (current - 1) * PAGE_SIZE;
+  return { page: current, pages, total: rows.length, start, pageRows: rows.slice(start, start + PAGE_SIZE),
+    setPage: (p: number) => setPage(Math.min(pages, Math.max(1, p))) };
+}
+
+function pageList(page: number, pages: number): (number | "…")[] {
+  if (pages <= 7) return Array.from({ length: pages }, (_, i) => i + 1);
+  const set = [1, pages, page - 1, page, page + 1].filter((p) => p >= 1 && p <= pages);
+  const sorted = [...new Set(set)].sort((a, b) => a - b);
+  const out: (number | "…")[] = [];
+  sorted.forEach((p, i) => { if (i && p - sorted[i - 1]! > 1) out.push("…"); out.push(p); });
+  return out;
+}
+
+export function Pagination({ page, pages, total, start, setPage }: { page: number; pages: number; total: number; start: number; setPage: (p: number) => void }) {
+  if (total === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-3 py-2.5">
+      <p className="text-xs text-muted-foreground">Showing {start + 1}–{Math.min(start + PAGE_SIZE, total)} of {total}</p>
+      {pages > 1 && (
+        <nav aria-label="Pagination" className="flex flex-wrap items-center gap-1">
+          <button className={btnCls + " disabled:opacity-50 disabled:hover:bg-card"} disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</button>
+          {pageList(page, pages).map((p, i) => p === "…"
+            ? <span key={"e" + i} className="px-1.5 text-sm text-muted-foreground">…</span>
+            : <button key={p} aria-current={p === page ? "page" : undefined} onClick={() => setPage(p)}
+                className={cn(btnCls, "min-w-8 px-2", p === page && "border-primary bg-primary text-primary-foreground hover:bg-primary/90")}>{p}</button>)}
+          <button className={btnCls + " disabled:opacity-50 disabled:hover:bg-card"} disabled={page === pages} onClick={() => setPage(page + 1)}>Next</button>
+        </nav>
+      )}
+    </div>
+  );
 }

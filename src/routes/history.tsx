@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useIncidents, getHousehold } from "@/lib/store";
 import { meta } from "@/lib/meta";
 import { fmtShortDate, fmtTime, fmtDuration } from "@/lib/format";
-import { Panel, Status, Table, PageHeader, Select, inputCls, DemoNote } from "@/components/prism/ui";
+import { Panel, Status, Table, PageHeader, Select, inputCls, DemoNote, usePagination, Pagination } from "@/components/prism/ui";
 
 export const Route = createFileRoute("/history")({
   head: () => meta("Incident History", "Searchable record of past incidents, response times and outcomes."),
@@ -20,6 +20,7 @@ function History() {
     return (!s || [i.id, h.address, h.homeownerName].some((v) => v.toLowerCase().includes(s)))
       && (!date || fmtShortDate(i.detectedAt) === date) && (!hazard || i.hazardType === hazard)
       && (!risk || i.riskLevel === risk) && (!outcome || i.outcome === outcome) && (!status || i.responseStatus === status); });
+  const pg = usePagination(rows, JSON.stringify([q, date, hazard, risk, outcome, status]));
 
   return (
     <div>
@@ -34,7 +35,7 @@ function History() {
           <Select label="Outcome" value={outcome} onChange={setOutcome} options={["Resolved", "False Alert"]} />
         </div>
         <Table head={["Date/Time", "Incident ID", "Address", "Hazard", "Risk Level", "Alert Status", "Response Status", "Response Time", "Incident Outcome"].map((l) => ({ key: l, label: l }))}>
-          {rows.map((i) => (
+          {pg.pageRows.map((i) => (
             <tr key={i.id} className="cursor-pointer" onClick={() => nav({ to: "/incidents/$id", params: { id: i.id } })}>
               <td className="whitespace-nowrap">{fmtShortDate(i.detectedAt)} {fmtTime(i.detectedAt)}</td>
               <td className="font-medium underline">{i.id}</td><td>{getHousehold(i.householdId)?.address}</td><td>{i.hazardType}</td>
@@ -44,6 +45,7 @@ function History() {
           ))}
           {rows.length === 0 && <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">No records match the filters.</td></tr>}
         </Table>
+        <Pagination {...pg} />
       </Panel>
       <DemoNote />
     </div>
