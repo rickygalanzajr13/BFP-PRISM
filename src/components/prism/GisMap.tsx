@@ -2,12 +2,19 @@
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect, useRef, type ReactNode } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from "react-leaflet";
+import type { GeoJsonObject } from "geojson";
 import type { Tone } from "./ui";
 import type { MapMarker } from "./IncidentMap";
+// Quezon City administrative boundary — OpenStreetMap relation 106569 (via Nominatim, © OSM contributors, ODbL).
+// For visualization only; not official cadastral/survey data.
+import qcBoundary from "@/data/quezon-city-boundary.json";
 
-export const SERVICE_CENTER: [number, number] = [14.6935, 121.0885]; // Commonwealth, Quezon City
-export const SERVICE_ZOOM = 14;
+const QC_GEOJSON = qcBoundary as unknown as GeoJsonObject;
+export const QC_BOUNDS = L.geoJSON(QC_GEOJSON).getBounds();
+const QC_MAX_BOUNDS = QC_BOUNDS.pad(0.1);
+export const SERVICE_CENTER: [number, number] = [QC_BOUNDS.getCenter().lat, QC_BOUNDS.getCenter().lng];
+export const SERVICE_ZOOM = 12;
 
 const fill: Record<Tone, string> = { critical: "bg-critical", warning: "bg-warning", normal: "bg-normal", offline: "bg-offline" };
 
@@ -42,7 +49,7 @@ export default function GisMap({ markers, selected, onSelect, renderPopup, class
   const mapRef = useRef<L.Map | null>(null);
   const incidents = markers.filter((m) => m.kind === "incident");
 
-  const reset = () => mapRef.current?.setView(SERVICE_CENTER, SERVICE_ZOOM);
+  const reset = () => mapRef.current?.fitBounds(QC_BOUNDS, { padding: [12, 12] });
   const fit = (list: MapMarker[]) => {
     const map = mapRef.current; if (!map) return;
     if (list.length === 0) { reset(); return; }
@@ -57,13 +64,17 @@ export default function GisMap({ markers, selected, onSelect, renderPopup, class
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
+  const inQC = markers.filter((m) => QC_MAX_BOUNDS.contains([m.lat, m.lng]));
   const btn = "block h-7 w-full px-2 text-left text-xs hover:bg-muted";
   return (
     <div className={"relative " + (className ?? "")}>
-      <MapContainer ref={mapRef} center={SERVICE_CENTER} zoom={SERVICE_ZOOM} className="h-full w-full bg-map" scrollWheelZoom>
+      <MapContainer ref={mapRef} bounds={QC_BOUNDS} boundsOptions={{ padding: [12, 12] }} maxBounds={QC_MAX_BOUNDS} maxBoundsViscosity={1}
+        minZoom={11} maxZoom={19} className="h-full w-full bg-map" scrollWheelZoom>
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
-        {markers.map((m) => (
+        <GeoJSON data={QC_GEOJSON} interactive={false}
+          style={{ color: "#475569", weight: 2, opacity: 0.8, fillColor: "#64748b", fillOpacity: 0.05, dashArray: "6 4" }} />
+        {inQC.map((m) => (
           <PrismMarker key={m.id} m={m} selected={selected === m.id} onSelect={onSelect}>{renderPopup(m.id)}</PrismMarker>
         ))}
       </MapContainer>
