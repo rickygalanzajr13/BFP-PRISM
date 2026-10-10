@@ -14,16 +14,16 @@ const H = (
 });
 
 const baseHouseholds: Household[] = [
-  H(1, "Juan Dela Cruz", "0917 555 0101", "123 Mabini Street", "Brgy. Commonwealth", "Near Commonwealth Elementary School", "Normal", "Concrete", "Gate opens inward. Water hydrant 40 m north.", 14.6912, 121.0781),
+  H(1, "Juan Dela Cruz", "0917 555 0101", "123 Mabini Street", "Brgy. Commonwealth", "Near Commonwealth Elementary School", "Normal", "Concrete", "Gate opens inward. Water hydrant 40 m north.", 14.6981, 121.0792),
   H(2, "Ana Reyes", "0918 555 0102", "45 Rizal Road", "Brgy. Commonwealth", "Across Reyes Sari-sari Store", "Narrow", "Mixed", "Street width approx. 3 m; parked tricycles common.", 14.6935, 121.0842),
-  H(3, "Maria Santos", "0919 555 0103", "88 Bonifacio Road", "Brgy. Holy Spirit", "Beside Holy Spirit Chapel", "Normal", "Concrete", "Two-storey; elderly resident on ground floor.", 14.6871, 121.0903),
-  H(4, "Roberto Garcia", "0920 555 0104", "12 Luna Alley", "Brgy. Batasan Hills", "Behind Batasan Hills Covered Court", "Limited", "Light Materials", "Alley accessible on foot only; nearest truck access at Luna St. corner (60 m).", 14.6968, 121.0929),
-  H(5, "Liza Mendoza", "0921 555 0105", "7 Aguinaldo Street", "Brgy. Holy Spirit", "Near Holy Spirit Health Center", "Normal", "Concrete", "LPG tank stored at rear kitchen.", 14.6849, 121.0824),
-  H(6, "Carlos Villanueva", "0922 555 0106", "230 Quezon Avenue", "Brgy. Payatas", "Opposite Payatas Gas Station", "Normal", "Concrete", "Commercial ground floor (bakery).", 14.6893, 121.0971),
-  H(7, "Teresita Aquino", "0923 555 0107", "19 Del Pilar Lane", "Brgy. Payatas", "Near Payatas Barangay Hall", "Narrow", "Light Materials", "Overhead electrical lines low across lane.", 14.6949, 121.1002),
-  H(8, "Ramon Bautista", "0924 555 0108", "56 Burgos Street", "Brgy. Batasan Hills", "Beside Bautista Rice Dealer", "Normal", "Mixed", "None.", 14.6989, 121.0867),
-  H(9, "Josefina Cruz", "0925 555 0109", "3 Jacinto Extension", "Brgy. Commonwealth", "End of Jacinto Ext., near creek", "Limited", "Light Materials", "Creek on east side; footbridge only.", 14.6826, 121.0752),
-  H(10, "Eduardo Ramos", "0926 555 0110", "101 Magsaysay Blvd", "Brgy. Holy Spirit", "Near Holy Spirit Public Market", "Normal", "Concrete", "Market traffic heavy 5–9 AM.", 14.6861, 121.0949),
+  H(3, "Maria Santos", "0919 555 0103", "88 Bonifacio Road", "Brgy. Commonwealth", "Beside Commonwealth Chapel", "Normal", "Concrete", "Two-storey; elderly resident on ground floor.", 14.7021, 121.0812),
+  H(4, "Roberto Garcia", "0920 555 0104", "12 Luna Alley", "Brgy. Commonwealth", "Behind Commonwealth Covered Court", "Limited", "Light Materials", "Alley accessible on foot only; nearest truck access at Luna St. corner (60 m).", 14.6968, 121.0929),
+  H(5, "Liza Mendoza", "0921 555 0105", "7 Aguinaldo Street", "Brgy. Commonwealth", "Near Commonwealth Health Center", "Normal", "Concrete", "LPG tank stored at rear kitchen.", 14.7002, 121.0768),
+  H(6, "Carlos Villanueva", "0922 555 0106", "230 Quezon Avenue", "Brgy. Commonwealth", "Opposite Commonwealth Ave. Gas Station", "Normal", "Concrete", "Commercial ground floor (bakery).", 14.6962, 121.0871),
+  H(7, "Teresita Aquino", "0923 555 0107", "19 Del Pilar Lane", "Brgy. Commonwealth", "Near Commonwealth Barangay Hall", "Narrow", "Light Materials", "Overhead electrical lines low across lane.", 14.7061, 121.0851),
+  H(8, "Ramon Bautista", "0924 555 0108", "56 Burgos Street", "Brgy. Commonwealth", "Beside Bautista Rice Dealer", "Normal", "Mixed", "None.", 14.6989, 121.0867),
+  H(9, "Josefina Cruz", "0925 555 0109", "3 Jacinto Extension", "Brgy. Commonwealth", "End of Jacinto Ext., near creek", "Limited", "Light Materials", "Creek on east side; footbridge only.", 14.7092, 121.0874),
+  H(10, "Eduardo Ramos", "0926 555 0110", "101 Magsaysay Blvd", "Brgy. Commonwealth", "Near Commonwealth Public Market", "Normal", "Concrete", "Market traffic heavy 5–9 AM.", 14.7039, 121.0858),
 ];
 
 // Extra fictional contacts (numbers use the 555 demo range).

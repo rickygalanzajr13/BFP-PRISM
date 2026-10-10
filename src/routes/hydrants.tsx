@@ -1,8 +1,8 @@
-// src/routes/hydrants.tsx  (NEW FILE)
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { meta } from "@/lib/meta";
 import { useHydrants, updateHydrant, deleteHydrant, hydrantTone } from "@/lib/store";
+import { isInScope, SCOPE_OUTSIDE_MESSAGE } from "@/lib/geo-scope";
 import { HYDRANT_SOURCE } from "@/lib/hydrant-data";
 import type { Hydrant, HydrantOperationalStatus, CoordinateStatus } from "@/lib/types";
 import { Panel, PageHeader, Status, Select, inputCls, btnCls, btnPrimaryCls, usePagination, Pagination } from "@/components/prism/ui";
@@ -50,7 +50,8 @@ function HydrantsPage() {
                 <td className="px-3 py-2"><Status value={h.operationalStatus} tone={hydrantTone(h.operationalStatus)} strong={h.operationalStatus === "Non-Operational"} />
                   {h.recordedStatus !== h.operationalStatus && <div className="text-xs text-muted-foreground">Recorded: {h.recordedStatus}</div>}</td>
                 <td className="px-3 py-2"><Status value={h.coordinateStatus} tone={h.coordinateStatus === "Verified" ? "normal" : "warning"} />
-                  <div className="text-xs tabular-nums text-muted-foreground">{h.latitude}, {h.longitude}</div></td>
+                  <div className="text-xs tabular-nums text-muted-foreground">{h.latitude}, {h.longitude}</div>
+                  {!isInScope(h.latitude, h.longitude) && <div className="mt-1"><Status value="Outside project scope" tone="warning" /></div>}</td>
                 <td className="px-3 py-2">{h.recordedPressurePsi != null ? `${h.recordedPressurePsi} PSI` : "—"}</td>
                 <td className="px-3 py-2">{h.recordedFlowGpm != null ? `${h.recordedFlowGpm} GPM` : "—"}</td>
                 <td className="max-w-64 px-3 py-2 text-xs">{h.remarks || "—"}</td>
@@ -106,6 +107,7 @@ function EditDialog({ h, onClose }: { h: Hydrant; onClose: () => void }) {
             <select className={inputCls + " w-full"} value={f.coordinateStatus} onChange={(e) => setF({ ...f, coordinateStatus: e.target.value as CoordinateStatus })}>{COORD.map((o) => <option key={o}>{o}</option>)}</select></label>
           <label><span className={lbl}>Latitude</span><input className={inputCls + " w-full"} value={f.latitude} onChange={(e) => setF({ ...f, latitude: e.target.value })} /></label>
           <label><span className={lbl}>Longitude</span><input className={inputCls + " w-full"} value={f.longitude} onChange={(e) => setF({ ...f, longitude: e.target.value })} /></label>
+          {Number.isFinite(lat) && Number.isFinite(lng) && !isInScope(lat, lng) && <p role="alert" className="col-span-2 text-xs font-medium text-warning">{SCOPE_OUTSIDE_MESSAGE} It will stay in the registry but will not be shown on the map.</p>}
           <p className="col-span-2 text-xs text-muted-foreground">Original source coordinates (kept for review): {h.sourceLatitude}, {h.sourceLongitude}. Recorded status: {h.recordedStatus}.</p>
           <label><span className={lbl}>Recorded pressure (PSI)</span><input className={inputCls + " w-full"} value={f.pressure} onChange={(e) => setF({ ...f, pressure: e.target.value })} placeholder="Not recorded" /></label>
           <label><span className={lbl}>Recorded flow rate (GPM)</span><input className={inputCls + " w-full"} value={f.flow} onChange={(e) => setF({ ...f, flow: e.target.value })} placeholder="Not recorded" /></label>

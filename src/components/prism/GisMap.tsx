@@ -1,4 +1,3 @@
-// src/components/prism/GisMap.tsx  (full file)
 // Real GIS map (Leaflet + OpenStreetMap). Browser-only: loaded lazily via IncidentMap.
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -7,22 +6,27 @@ import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from "react-leaflet";
 import type { GeoJsonObject } from "geojson";
 import type { Tone } from "./ui";
 import type { MapMarker } from "./IncidentMap";
-// Quezon City administrative boundary — OpenStreetMap relation 106569 (via Nominatim, © OSM contributors, ODbL).
+// Barangay Commonwealth boundary — OpenStreetMap relation 1762721 (© OSM contributors, ODbL).
 // For visualization only; not official cadastral/survey data.
-import qcBoundary from "@/data/quezon-city-boundary.json";
+import brgyBoundary from "@/data/barangay-commonwealth-boundary.json";
+import { isInScope } from "@/lib/geo-scope";
 
-const QC_GEOJSON = qcBoundary as unknown as GeoJsonObject;
+const QC_GEOJSON = brgyBoundary as unknown as GeoJsonObject;
 export const QC_BOUNDS = L.geoJSON(QC_GEOJSON).getBounds();
-const QC_MAX_BOUNDS = QC_BOUNDS.pad(0.1);
+const QC_MAX_BOUNDS = QC_BOUNDS.pad(0.25);
 export const SERVICE_CENTER: [number, number] = [QC_BOUNDS.getCenter().lat, QC_BOUNDS.getCenter().lng];
-export const SERVICE_ZOOM = 12;
+export const SERVICE_ZOOM = 15;
 
 const fill: Record<Tone, string> = { critical: "bg-critical", warning: "bg-warning", normal: "bg-normal", offline: "bg-offline" };
+const stroke: Record<Tone, string> = { critical: "text-critical", warning: "text-warning", normal: "text-hydrant", offline: "text-offline" };
+
+// Lucide "droplet" glyph, inlined so Leaflet divIcons can use it as raw HTML.
+const DROPLET_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>`;
 
 function icon(m: MapMarker, selected: boolean) {
   if (m.kind === "hydrant") {
-    const cls = `block size-3 rotate-45 border-2 border-card ${fill[m.tone]} ring-1 ${selected ? "ring-2 ring-foreground" : "ring-foreground/60"}`;
-    return L.divIcon({ className: "", html: `<span class="${cls}"></span>`, iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -7] });
+    const cls = `block size-[18px] drop-shadow-[0_1px_1px_rgba(255,255,255,0.55)] dark:drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] ${stroke[m.tone]} ${selected ? "rounded-full ring-2 ring-foreground" : ""}`;
+    return L.divIcon({ className: "", html: `<span class="${cls}">${DROPLET_SVG}</span>`, iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -9] });
   }
   const incident = m.kind === "incident";
   const size = incident ? 20 : 12;
@@ -54,7 +58,7 @@ export default function GisMap({ markers, selected, onSelect, renderPopup, class
   const mapRef = useRef<L.Map | null>(null);
   const incidents = markers.filter((m) => m.kind === "incident");
 
-  const reset = () => mapRef.current?.fitBounds(QC_BOUNDS, { padding: [12, 12] });
+  const reset = () => mapRef.current?.fitBounds(QC_BOUNDS, { padding: [24, 24] });
   const fit = (list: MapMarker[]) => {
     const map = mapRef.current; if (!map) return;
     if (list.length === 0) { reset(); return; }
@@ -69,16 +73,16 @@ export default function GisMap({ markers, selected, onSelect, renderPopup, class
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
-  const inQC = markers.filter((m) => QC_MAX_BOUNDS.contains([m.lat, m.lng]));
+  const inQC = markers.filter((m) => isInScope(m.lat, m.lng));
   const btn = "block h-7 w-full px-2 text-left text-xs hover:bg-muted";
   return (
     <div className={"relative " + (className ?? "")}>
-      <MapContainer ref={mapRef} bounds={QC_BOUNDS} boundsOptions={{ padding: [12, 12] }} maxBounds={QC_MAX_BOUNDS} maxBoundsViscosity={1}
-        minZoom={11} maxZoom={19} className="h-full w-full bg-map" scrollWheelZoom>
+      <MapContainer ref={mapRef} bounds={QC_BOUNDS} boundsOptions={{ padding: [24, 24] }} maxBounds={QC_MAX_BOUNDS} maxBoundsViscosity={1}
+        minZoom={14} maxZoom={19} className="h-full w-full bg-map" scrollWheelZoom>
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
         <GeoJSON data={QC_GEOJSON} interactive={false}
-          style={{ color: "#475569", weight: 2, opacity: 0.8, fillColor: "#64748b", fillOpacity: 0.05, dashArray: "6 4" }} />
+          style={{ color: "#475569", weight: 2, opacity: 0.8, fillColor: "#64748b", fillOpacity: 0.04, dashArray: "6 4" }} />
         {inQC.map((m) => (
           <PrismMarker key={m.id} m={m} selected={selected === m.id} onSelect={onSelect}>{renderPopup(m.id)}</PrismMarker>
         ))}
@@ -101,7 +105,7 @@ export function MapLegend() {
       <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-offline" />Offline</span>
       <span className="flex items-center gap-1 border-l border-border pl-3"><span className="size-2.5 rounded-full bg-muted-foreground ring-1 ring-foreground/70" />Active incident</span>
       <span className="flex items-center gap-1"><span className="size-2 rounded-[2px] bg-muted-foreground" />Registered household</span>
-      <span className="flex items-center gap-1"><span className="size-2 rotate-45 bg-normal ring-1 ring-foreground/60" />Fire hydrant (red = non-operational)</span>
+      <span className="flex items-center gap-1"><span className="inline-flex size-4 text-hydrant" dangerouslySetInnerHTML={{ __html: DROPLET_SVG }} />Fire hydrant (blue = operational, red = non-operational)</span>
     </div>
   );
 }

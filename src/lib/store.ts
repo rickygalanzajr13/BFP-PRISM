@@ -1,3 +1,4 @@
+import { isInScope } from "./geo-scope";
 // Client-side mock store. Swap the mutation bodies for API calls
 // (e.g. PATCH /api/incidents/:id) once the Node/SQLite backend exists.
 import { useSyncExternalStore } from "react";
@@ -95,6 +96,7 @@ export function distanceMeters(aLat: number, aLng: number, bLat: number, bLng: n
 }
 /** Nearest hydrants with verified coordinates, sorted by straight-line distance. */
 export function nearestHydrants(list: Hydrant[], lat: number, lng: number, n = 3) {
+  list = list.filter((h) => isInScope(h.latitude, h.longitude));
   return list.filter((h) => h.coordinateStatus === "Verified")
     .map((h) => ({ h, d: distanceMeters(lat, lng, h.latitude, h.longitude) }))
     .sort((a, b) => a.d - b.d).slice(0, n);

@@ -15,3 +15,5 @@
 - Desktop sidebar collapse uses an icon-only rail and the `bfp-prism-sidebar` browser preference — why: preserves navigation access while giving operational pages more room.
 
 - Household contacts/accessibility tags are mutated only via store.ts (saveContact/removeContact) and shown only in authorized detail views, never in map popups/markers or URLs — why: treated as sensitive household data.
+- Fire hydrants seed from src/lib/hydrant-data.ts and are merged by stable ID in store.ts; source coordinates are immutable and only 'Verified' hydrants are mapped or used for nearest-hydrant distance — why: preserve the supplied inventory and avoid plotting unconfirmed locations.
+- Project scope is Barangay Commonwealth: map bounds come from src/data/barangay-commonwealth-boundary.json (OSM relation 1762721) and in-scope checks use point-in-polygon in src/lib/geo-scope.ts; out-of-scope records are flagged, never deleted or moved — why: rectangles/radii misrepresent the barangay shape.

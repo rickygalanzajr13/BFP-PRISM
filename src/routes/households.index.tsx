@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useHouseholds, getDevice } from "@/lib/store";
+import { isInScope } from "@/lib/geo-scope";
 import { meta } from "@/lib/meta";
 import { Panel, Status, Table, PageHeader, Select, inputCls, DemoNote, usePagination, Pagination } from "@/components/prism/ui";
 
@@ -27,7 +28,7 @@ function Registry() {
           {pg.pageRows.map((h) => (
             <tr key={h.id} className="cursor-pointer" onClick={() => nav({ to: "/households/$id", params: { id: h.id } })}>
               <td className="font-medium">{h.id}</td><td>{h.homeownerName}</td><td>{h.address}</td>
-              <td>{h.barangay}</td><td>{h.deviceId}</td><td><Status value={getDevice(h.deviceId)!.status} /></td>
+              <td>{h.barangay}{!isInScope(h.latitude, h.longitude) && <div className="mt-1"><Status value="Outside project scope — review" tone="warning" /></div>}</td><td>{h.deviceId}</td><td><Status value={getDevice(h.deviceId)!.status} /></td>
               <td className="whitespace-nowrap text-muted-foreground">{h.registeredContacts.length} Registered Contact{h.registeredContacts.length === 1 ? "" : "s"}</td>
               <td><Link to="/households/$id" params={{ id: h.id }} className="font-medium underline">Open</Link></td>
             </tr>

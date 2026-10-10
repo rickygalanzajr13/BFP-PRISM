@@ -1,6 +1,6 @@
-// src/routes/map.tsx  (full file)
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { isInScope } from "@/lib/geo-scope";
 import { useIncidents, households, getDevice, useHydrants, hydrantTone } from "@/lib/store";
 import { meta } from "@/lib/meta";
 import { IncidentMap, type MapMarker } from "@/components/prism/IncidentMap";
@@ -19,19 +19,19 @@ function MapPage() {
   const [sel, setSel] = useState<string | null>(focus ?? null);
   useEffect(() => { if (focus) setSel(focus); }, [focus]);
   const [showHY, setShowHY] = useState(true);
-  const hydrants = useHydrants().filter((h) => h.coordinateStatus === "Verified");
+  const hydrants = useHydrants().filter((h) => h.coordinateStatus === "Verified" && isInScope(h.latitude, h.longitude));
   const [q, setQ] = useState("");
   const [showHH, setShowHH] = useState(true);
   const s = q.toLowerCase();
   const matchHH = households.filter((h) => !s || [h.address, h.barangay, h.homeownerName, h.deviceId, h.landmark].some((v) => v.toLowerCase().includes(s)));
 
   const markers: MapMarker[] = [
-    ...(showHH ? matchHH.filter((h) => !active.some((i) => i.householdId === h.id)).map((h) => {
+    ...(showHH ? matchHH.filter((h) => isInScope(h.latitude, h.longitude) && !active.some((i) => i.householdId === h.id)).map((h) => {
       const d = getDevice(h.deviceId)!;
       return { id: h.id, lat: h.latitude, lng: h.longitude, kind: "household" as const, label: h.address, tone: d.status === "Offline" ? "offline" as const : toneOf(d.sensorStatus) };
     }) : []),
     ...(showHY || focus ? hydrants.filter((h) => showHY || h.id === focus).map((h) => ({ id: h.id, lat: h.latitude, lng: h.longitude, kind: "hydrant" as const, label: `${h.id} — ${h.location}`, tone: hydrantTone(h.operationalStatus) })) : []),
-    ...active.map((i) => ({ id: i.id, lat: i.latitude, lng: i.longitude, kind: "incident" as const, label: i.id, tone: toneOf(i.riskLevel) })),
+    ...active.filter((i) => isInScope(i.latitude, i.longitude)).map((i) => ({ id: i.id, lat: i.latitude, lng: i.longitude, kind: "incident" as const, label: i.id, tone: toneOf(i.riskLevel) })),
   ];
 
   const popup = (id: string) => {
