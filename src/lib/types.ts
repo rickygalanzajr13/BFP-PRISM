@@ -79,3 +79,23 @@ export interface Incident {
 }
 
 export const RESPONSE_STEPS: ResponseStatus[] = ["Detected", "Received", "Responding", "Resolved"];
+
+export type HydrantOperationalStatus = "Operational" | "Non-Operational" | "Unknown";
+export type CoordinateStatus = "Verified" | "Verification Required";
+
+export interface Hydrant {
+  id: string; // system-generated, not an official BFP hydrant ID
+  location: string;
+  barangay: string;
+  operationalStatus: HydrantOperationalStatus;
+  recordedStatus: string; // status text exactly as recorded in the source
+  coordinateStatus: CoordinateStatus;
+  sourceLatitude: number; // original source coordinates — never overwritten
+  sourceLongitude: number;
+  latitude: number; // current (possibly corrected) coordinates
+  longitude: number;
+  recordedPressurePsi: number | null; // inventory value, not a live reading
+  recordedFlowGpm: number | null; // inventory value, not a live reading
+  remarks: string;
+  source: string;
+}

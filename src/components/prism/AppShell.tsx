@@ -1,7 +1,9 @@
+// src/components/prism/AppShell.tsx  (full file)
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Bell,
+  Droplets,
   ChartNoAxesColumnIncreasing,
   History,
   House,
@@ -27,6 +29,7 @@ const NAV = [
   { to: "/devices", label: "Devices", icon: RadioTower },
   { to: "/analytics", label: "Response Analytics", icon: ChartNoAxesColumnIncreasing },
   { to: "/households", label: "Household Registry", icon: House },
+  { to: "/hydrants", label: "Fire Hydrants", icon: Droplets },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {

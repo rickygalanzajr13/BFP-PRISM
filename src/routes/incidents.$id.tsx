@@ -1,6 +1,7 @@
+// src/routes/incidents.$id.tsx  (full file)
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useIncidents, useHousehold, getPrimaryContact, accessibilitySummary, markReceived, markResponding, markResolved } from "@/lib/store";
+import { useIncidents, useHousehold, getPrimaryContact, accessibilitySummary, markReceived, markResponding, markResolved, useHydrants, nearestHydrants, hydrantTone } from "@/lib/store";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { fmtDate, fmtTime, fmtDuration } from "@/lib/format";
 import { RESPONSE_STEPS } from "@/lib/types";
@@ -40,10 +41,12 @@ function IncidentDetail() {
   const i = useIncidents().find((x) => x.id === id);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const h = useHousehold(i?.householdId ?? "");
+  const hydrants = useHydrants();
   if (!i || !h) return <div className="py-16 text-center text-sm">Incident {id} not found. <Link to="/incidents" className="underline">Back to Active Incidents</Link></div>;
   const primary = getPrimaryContact(h);
   const access = accessibilitySummary(h);
   const tagLabel = (t: string, n: number) => t === "Senior" || t === "PWD" || t === "Child/Minor" ? `${n} ${t === "Child/Minor" ? (n > 1 ? "Minors" : "Minor") : t === "Senior" && n > 1 ? "Seniors" : t}` : t;
+  const near = nearestHydrants(hydrants, h.latitude, h.longitude);
   const step = RESPONSE_STEPS.indexOf(i.responseStatus);
   const crit = i.riskLevel === "Critical";
   const stamps = [i.detectedAt, i.receivedAt, i.respondingAt, i.resolvedAt];
@@ -92,6 +95,23 @@ function IncidentDetail() {
             <div className="text-sm font-medium">{h.accessibilityNotes}</div></div>
         </div>
       </section>
+
+      <Panel title="Nearby Fire Hydrants">
+        {near.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No hydrants with verified coordinates are registered.</p> : (
+          <ul className="divide-y divide-border">
+            {near.map(({ h: hy, d }) => (
+              <li key={hy.id} className={cn("flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 text-sm", hy.operationalStatus === "Non-Operational" && "border-l-4 border-l-critical bg-critical-soft")}>
+                <span className="w-20 font-semibold">{hy.id}</span>
+                <span className="min-w-0 flex-1">{hy.location}{hy.remarks && <span className="block text-xs text-muted-foreground">{hy.remarks}</span>}</span>
+                <span className="w-20 text-right tabular-nums">{d < 1000 ? `${Math.round(d)} m` : `${(d / 1000).toFixed(2)} km`}</span>
+                <Status value={hy.recordedStatus} tone={hydrantTone(hy.operationalStatus)} strong={hy.operationalStatus === "Non-Operational"} />
+                <Link to="/map" search={{ focus: hy.id }} className="text-xs underline">View on Map</Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="border-t border-border px-4 py-2 text-xs text-muted-foreground">Straight-line distance from the household. Status is from the recorded inventory; water availability, pressure, access and condition are not verified.</p>
+      </Panel>
 
       <Panel title="Household & Accessibility Information">
         <div className="grid gap-4 p-4 lg:grid-cols-[1fr_1fr_2fr]">

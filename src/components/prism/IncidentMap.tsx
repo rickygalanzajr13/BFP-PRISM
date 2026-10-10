@@ -1,9 +1,10 @@
+// src/components/prism/IncidentMap.tsx  (full file)
 // Stable map API. Renders the Leaflet/OpenStreetMap GIS map (GisMap) in the browser only.
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { Tone } from "./ui";
 
-export interface MapMarker { id: string; lat: number; lng: number; tone: Tone; kind: "incident" | "household"; label: string }
+export interface MapMarker { id: string; lat: number; lng: number; tone: Tone; kind: "incident" | "household" | "hydrant"; label: string }
 
 const GisMap = lazy(() => import("./GisMap"));
 

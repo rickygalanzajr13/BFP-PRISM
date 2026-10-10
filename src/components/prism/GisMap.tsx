@@ -1,3 +1,4 @@
+// src/components/prism/GisMap.tsx  (full file)
 // Real GIS map (Leaflet + OpenStreetMap). Browser-only: loaded lazily via IncidentMap.
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -19,6 +20,10 @@ export const SERVICE_ZOOM = 12;
 const fill: Record<Tone, string> = { critical: "bg-critical", warning: "bg-warning", normal: "bg-normal", offline: "bg-offline" };
 
 function icon(m: MapMarker, selected: boolean) {
+  if (m.kind === "hydrant") {
+    const cls = `block size-3 rotate-45 border-2 border-card ${fill[m.tone]} ring-1 ${selected ? "ring-2 ring-foreground" : "ring-foreground/60"}`;
+    return L.divIcon({ className: "", html: `<span class="${cls}"></span>`, iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -7] });
+  }
   const incident = m.kind === "incident";
   const size = incident ? 20 : 12;
   const cls = incident
@@ -96,6 +101,7 @@ export function MapLegend() {
       <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-offline" />Offline</span>
       <span className="flex items-center gap-1 border-l border-border pl-3"><span className="size-2.5 rounded-full bg-muted-foreground ring-1 ring-foreground/70" />Active incident</span>
       <span className="flex items-center gap-1"><span className="size-2 rounded-[2px] bg-muted-foreground" />Registered household</span>
+      <span className="flex items-center gap-1"><span className="size-2 rotate-45 bg-normal ring-1 ring-foreground/60" />Fire hydrant (red = non-operational)</span>
     </div>
   );
 }

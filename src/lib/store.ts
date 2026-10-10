@@ -65,3 +65,38 @@ export function accessibilitySummary(h: Household) {
 
 export const getDevice = (id: string) => devices.find((d) => d.id === id);
 export { initialHouseholds as households, devices };
+
+// --- Fire hydrants (swap for /api/hydrants later) ---
+import { seedHydrants } from "./hydrant-data";
+import type { Hydrant } from "./types";
+
+/** Insert seed records by stable ID; existing records (user edits) are kept. */
+export function mergeSeed(existing: Hydrant[], seed: Hydrant[]): Hydrant[] {
+  const ids = new Set(existing.map((h) => h.id));
+  return [...existing, ...seed.filter((s) => !ids.has(s.id))];
+}
+let hydrants: Hydrant[] = mergeSeed([], seedHydrants);
+const hyListeners = new Set<() => void>();
+const hySubscribe = (l: () => void) => (hyListeners.add(l), () => hyListeners.delete(l));
+const hyEmit = () => hyListeners.forEach((l) => l());
+export const useHydrants = () => useSyncExternalStore(hySubscribe, () => hydrants, () => seedHydrants);
+
+/** Update editable fields. Source coordinates are never overwritten. */
+export function updateHydrant(id: string, p: Partial<Omit<Hydrant, "id" | "sourceLatitude" | "sourceLongitude" | "source">>) {
+  hydrants = hydrants.map((h) => (h.id === id ? { ...h, ...p } : h));
+  hyEmit();
+}
+export function deleteHydrant(id: string) { hydrants = hydrants.filter((h) => h.id !== id); hyEmit(); }
+
+export function distanceMeters(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const r = (d: number) => (d * Math.PI) / 180, R = 6371000;
+  const x = Math.sin(r(bLat - aLat) / 2) ** 2 + Math.cos(r(aLat)) * Math.cos(r(bLat)) * Math.sin(r(bLng - aLng) / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+/** Nearest hydrants with verified coordinates, sorted by straight-line distance. */
+export function nearestHydrants(list: Hydrant[], lat: number, lng: number, n = 3) {
+  return list.filter((h) => h.coordinateStatus === "Verified")
+    .map((h) => ({ h, d: distanceMeters(lat, lng, h.latitude, h.longitude) }))
+    .sort((a, b) => a.d - b.d).slice(0, n);
+}
+export const hydrantTone = (s: Hydrant["operationalStatus"]) => (s === "Operational" ? "normal" : s === "Non-Operational" ? "critical" : "offline") as "normal" | "critical" | "offline";
