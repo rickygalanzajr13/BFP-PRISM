@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useIncidents, getHousehold, markReceived, markResponding, markResolved } from "@/lib/store";
+import { useIncidents, useHousehold, getPrimaryContact, accessibilitySummary, markReceived, markResponding, markResolved } from "@/lib/store";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { fmtDate, fmtTime, fmtDuration } from "@/lib/format";
 import { RESPONSE_STEPS } from "@/lib/types";
 import { IncidentMap } from "@/components/prism/IncidentMap";
 import { Panel, Field, Status, toneOf, btnPrimaryCls, DemoNote } from "@/components/prism/ui";
 import { cn } from "@/lib/utils";
+import { TagChip } from "@/components/prism/HouseholdContacts";
 
 export const Route = createFileRoute("/incidents/$id")({
   head: ({ params }) => ({
@@ -38,8 +39,11 @@ function IncidentDetail() {
   const { id } = Route.useParams();
   const i = useIncidents().find((x) => x.id === id);
   const [confirm, setConfirm] = useState<Confirm>(null);
-  if (!i) return <div className="py-16 text-center text-sm">Incident {id} not found. <Link to="/incidents" className="underline">Back to Active Incidents</Link></div>;
-  const h = getHousehold(i.householdId)!;
+  const h = useHousehold(i?.householdId ?? "");
+  if (!i || !h) return <div className="py-16 text-center text-sm">Incident {id} not found. <Link to="/incidents" className="underline">Back to Active Incidents</Link></div>;
+  const primary = getPrimaryContact(h);
+  const access = accessibilitySummary(h);
+  const tagLabel = (t: string, n: number) => t === "Senior" || t === "PWD" || t === "Child/Minor" ? `${n} ${t === "Child/Minor" ? (n > 1 ? "Minors" : "Minor") : t === "Senior" && n > 1 ? "Seniors" : t}` : t;
   const step = RESPONSE_STEPS.indexOf(i.responseStatus);
   const crit = i.riskLevel === "Critical";
   const stamps = [i.detectedAt, i.receivedAt, i.respondingAt, i.resolvedAt];
@@ -64,7 +68,7 @@ function IncidentDetail() {
         <Panel title="Immediate Incident Information">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 p-4">
             <Field label="Homeowner / Involved Person" value={h.homeownerName} emphasis />
-            <Field label="Contact Number" value={<a href={`tel:${h.contactNumber.replace(/\s/g, "")}`} className="underline">{h.contactNumber}</a>} emphasis />
+            <Field label="Primary Contact" value={primary?.contactNumber ? <a href={`tel:${primary.contactNumber.replace(/\s/g, "")}`} className="underline">{primary.contactNumber}</a> : "—"} emphasis />
             <div className="col-span-2"><Field label="Exact Address" value={`${h.address}, ${h.barangay}`} emphasis /></div>
             <div className="col-span-2"><Field label="Nearest Landmark" value={h.landmark} /></div>
             <Field label="Device" value={i.deviceId} />
@@ -88,6 +92,37 @@ function IncidentDetail() {
             <div className="text-sm font-medium">{h.accessibilityNotes}</div></div>
         </div>
       </section>
+
+      <Panel title="Household & Accessibility Information">
+        <div className="grid gap-4 p-4 lg:grid-cols-[1fr_1fr_2fr]">
+          <dl className="space-y-2">
+            <Field label="Homeowner" value={h.homeownerName} emphasis />
+            <Field label="Exact Address" value={h.address} />
+            <Field label="Barangay" value={h.barangay} />
+            <Field label="Nearest Landmark" value={h.landmark} />
+          </dl>
+          <div>
+            <div className="text-xs text-muted-foreground">Accessibility Information</div>
+            {access.length ? <div className="mt-1 flex flex-wrap gap-1">{access.map((a) => <TagChip key={a.tag} tag={tagLabel(a.tag, a.count)} />)}</div>
+              : <div className="mt-0.5 text-sm text-muted-foreground">None registered</div>}
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs text-muted-foreground">Registered Contacts</div>
+            <ul className="mt-1 divide-y divide-border text-sm">
+              {h.registeredContacts.map((c) => (
+                <li key={c.contactId} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1.5">
+                  <span className="break-words font-medium">{c.name}</span>
+                  <span className="text-muted-foreground">{c.relationshipToHousehold || "—"}</span>
+                  {c.contactNumber ? <a href={`tel:${c.contactNumber.replace(/\s/g, "")}`} className="underline">{c.contactNumber}</a> : <span className="text-muted-foreground">No number</span>}
+                  {c.isPrimaryContact && <span className="text-xs font-semibold uppercase tracking-wide">Primary</span>}
+                  <span className="text-xs text-muted-foreground">SMS: {c.smsEnabled ? "Yes" : "No"}</span>
+                </li>
+              ))}
+              {h.registeredContacts.length === 0 && <li className="py-1.5 text-muted-foreground">No registered contacts.</li>}
+            </ul>
+          </div>
+        </div>
+      </Panel>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title={`Sensor Information — ${i.deviceId}`}>

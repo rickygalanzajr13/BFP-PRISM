@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getHousehold, getDevice, useIncidents } from "@/lib/store";
+import { useHousehold, getDevice, useIncidents } from "@/lib/store";
+import { RegisteredContactsPanel } from "@/components/prism/HouseholdContacts";
 import { fmtShortDate, fmtTime } from "@/lib/format";
 import { Panel, Field, Status, DemoNote } from "@/components/prism/ui";
 
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/households/$id")({
 
 function Profile() {
   const { id } = Route.useParams();
-  const h = getHousehold(id);
+  const h = useHousehold(id);
   const inc = useIncidents().filter((i) => i.householdId === id);
   if (!h) return <div className="py-16 text-center text-sm">Household not found. <Link to="/households" className="underline">Back</Link></div>;
   const d = getDevice(h.deviceId)!;
@@ -29,7 +30,7 @@ function Profile() {
         <Panel title="Household Information">
           <dl className="grid grid-cols-2 gap-4 p-4">
             <Field label="Homeowner" value={h.homeownerName} emphasis />
-            <Field label="Contact Number" value={h.contactNumber} emphasis />
+            <Field label="Assigned Device" value={h.deviceId} />
             <div className="col-span-2"><Field label="Exact Address" value={h.address} /></div>
             <Field label="Barangay" value={h.barangay} />
             <Field label="Nearest Landmark" value={h.landmark} />
@@ -46,6 +47,7 @@ function Profile() {
           </dl>
         </Panel>
       </div>
+      <RegisteredContactsPanel household={h} />
       <Panel title="Incident Record" bodyClass="divide-y divide-border">
         {inc.length === 0 && <p className="p-4 text-sm text-muted-foreground">No incidents recorded.</p>}
         {inc.map((i) => (

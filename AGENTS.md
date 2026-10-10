@@ -13,3 +13,5 @@
 - Map uses Leaflet + OpenStreetMap (src/components/prism/GisMap.tsx), lazy-loaded browser-only behind IncidentMap — why: Leaflet needs window; IncidentMap keeps a stable props API. Incident coordinates come from the household record.
 - Theme selection uses a root `dark` class and the `bfp-prism-theme` browser preference — why: enables token-based dark mode without changing page components.
 - Desktop sidebar collapse uses an icon-only rail and the `bfp-prism-sidebar` browser preference — why: preserves navigation access while giving operational pages more room.
+
+- Household contacts/accessibility tags are mutated only via store.ts (saveContact/removeContact) and shown only in authorized detail views, never in map popups/markers or URLs — why: treated as sensitive household data.
