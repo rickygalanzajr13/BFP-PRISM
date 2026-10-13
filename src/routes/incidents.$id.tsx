@@ -1,7 +1,8 @@
 // src/routes/incidents.$id.tsx  (full file)
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useIncidents, useHousehold, getPrimaryContact, accessibilitySummary, markReceived, markResponding, markResolved, useHydrants, nearestHydrants, hydrantTone } from "@/lib/store";
+import { useIncidents, useHousehold, getPrimaryContact, accessibilitySummary, markReceived, markResponding, markResolved, useHydrants, nearestHydrants, hydrantTone, usePowerEvents } from "@/lib/store";
+import { powerContextForIncident, batteryConditionLabel, fmtVoltage } from "@/lib/power";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { fmtDate, fmtTime, fmtDuration } from "@/lib/format";
 import { RESPONSE_STEPS } from "@/lib/types";
@@ -42,11 +43,13 @@ function IncidentDetail() {
   const [confirm, setConfirm] = useState<Confirm>(null);
   const h = useHousehold(i?.householdId ?? "");
   const hydrants = useHydrants();
+  const powerEvents = usePowerEvents();
   if (!i || !h) return <div className="py-16 text-center text-sm">Incident {id} not found. <Link to="/incidents" className="underline">Back to Active Incidents</Link></div>;
   const primary = getPrimaryContact(h);
   const access = accessibilitySummary(h);
   const tagLabel = (t: string, n: number) => t === "Senior" || t === "PWD" || t === "Child/Minor" ? `${n} ${t === "Child/Minor" ? (n > 1 ? "Minors" : "Minor") : t === "Senior" && n > 1 ? "Seniors" : t}` : t;
   const near = nearestHydrants(hydrants, h.latitude, h.longitude);
+  const power = powerContextForIncident(powerEvents, i);
   const step = RESPONSE_STEPS.indexOf(i.responseStatus);
   const crit = i.riskLevel === "Critical";
   const stamps = [i.detectedAt, i.receivedAt, i.respondingAt, i.resolvedAt];
@@ -65,8 +68,17 @@ function IncidentDetail() {
       <div className="grid gap-4 lg:grid-cols-[1fr_420px]">
         <Panel title="Location">
           <IncidentMap className="h-[360px]" selected={i.id} onSelect={() => {}}
-            markers={[{ id: i.id, lat: i.latitude, lng: i.longitude, tone: toneOf(i.riskLevel), kind: "incident", label: i.id }]}
-            renderPopup={() => <div><b>{h.address}</b><div className="text-xs text-muted-foreground">{h.landmark}</div><div className="mt-1 text-xs">{i.latitude.toFixed(4)}, {i.longitude.toFixed(4)}</div></div>} />
+            markers={[
+              { id: i.id, lat: i.latitude, lng: i.longitude, tone: toneOf(i.riskLevel), kind: "incident", label: i.id },
+              ...near.map(({ h: hy, d }) => ({ id: hy.id, lat: hy.latitude, lng: hy.longitude, tone: hydrantTone(hy.operationalStatus), kind: "hydrant" as const, label: hy.id })),
+            ]}
+            renderPopup={(mid) => {
+              if (mid === i.id) return <div><b>{h.address}</b><div className="text-xs text-muted-foreground">{h.landmark}</div><div className="mt-1 text-xs">{i.latitude.toFixed(4)}, {i.longitude.toFixed(4)}</div></div>;
+              const entry = near.find((x) => x.h.id === mid);
+              if (!entry) return null;
+              const hy = entry.h;
+              return <div><b>{hy.id}</b><div className="text-xs">{hy.location}</div><div className="mt-1 text-xs">{entry.d < 1000 ? `${Math.round(entry.d)} m` : `${(entry.d / 1000).toFixed(2)} km`} from the household · {hy.recordedStatus}</div></div>;
+            }} />
         </Panel>
         <Panel title="Immediate Incident Information">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 p-4">
@@ -94,6 +106,17 @@ function IncidentDetail() {
           <div className="border-l-4 border-l-foreground/60 pl-3"><div className="text-xs text-muted-foreground">Additional Accessibility Notes</div>
             <div className="text-sm font-medium">{h.accessibilityNotes}</div></div>
         </div>
+        {power && (
+          <div className="border-t border-border px-4 py-3 text-sm">
+            <div className="font-semibold text-warning-foreground">External Power Lost — Running on Backup Battery</div>
+            <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-xs">
+              <span>Power lost: {fmtTime(power.lost.occurredAt)}</span>
+              <span>Battery: {batteryConditionLabel(power.latest).label} · {fmtVoltage(power.latest.batteryVoltage)}</span>
+              <span>{power.latest.receivedAt ? "Received by system" : "Awaiting synchronization"}</span>
+              <span className="text-muted-foreground">Device power event — not part of the hazard detection or outcome.</span>
+            </div>
+          </div>
+        )}
       </section>
 
       <Panel title="Nearby Fire Hydrants">

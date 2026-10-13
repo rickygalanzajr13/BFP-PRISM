@@ -67,6 +67,21 @@ export function accessibilitySummary(h: Household) {
 export const getDevice = (id: string) => devices.find((d) => d.id === id);
 export { initialHouseholds as households, devices };
 
+// --- Power events (swap for GET /api/devices/:id/power-events and a POST ingest endpoint later) ---
+import { initialPowerEvents } from "./mock-data";
+import type { PowerEvent } from "./types";
+let powerEvents: PowerEvent[] = initialPowerEvents;
+const peListeners = new Set<() => void>();
+const peSubscribe = (l: () => void) => (peListeners.add(l), () => peListeners.delete(l));
+export const usePowerEvents = () => useSyncExternalStore(peSubscribe, () => powerEvents, () => initialPowerEvents);
+/** Ingest a power event reported by a node. Identical consecutive events per device are deduplicated. */
+export function recordPowerEvent(e: PowerEvent) {
+  const last = powerEvents.find((x) => x.deviceId === e.deviceId);
+  if (powerEvents.some((x) => x.id === e.id) || (last && last.type === e.type)) return;
+  powerEvents = [e, ...powerEvents];
+  peListeners.forEach((l) => l());
+}
+
 // --- Fire hydrants (swap for /api/hydrants later) ---
 import { seedHydrants } from "./hydrant-data";
 import type { Hydrant } from "./types";

@@ -15,6 +15,7 @@ import { Route as DevicesRouteImport } from './routes/devices'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as HydrantsRouteImport } from './routes/hydrants'
 import { Route as MapRouteImport } from './routes/map'
+import { Route as DevicesIdRouteImport } from './routes/devices_.$id'
 import { Route as HouseholdsIndexRouteImport } from './routes/households.index'
 import { Route as HouseholdsIdRouteImport } from './routes/households.$id'
 import { Route as IncidentsIndexRouteImport } from './routes/incidents.index'
@@ -50,6 +51,11 @@ const MapRoute = MapRouteImport.update({
   path: '/map',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevicesIdRoute = DevicesIdRouteImport.update({
+  id: '/devices_/$id',
+  path: '/devices/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HouseholdsIndexRoute = HouseholdsIndexRouteImport.update({
   id: '/households/',
   path: '/households/',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/hydrants': typeof HydrantsRoute
   '/map': typeof MapRoute
+  '/devices/$id': typeof DevicesIdRoute
   '/households/$id': typeof HouseholdsIdRoute
   '/incidents/$id': typeof IncidentsIdRoute
   '/households/': typeof HouseholdsIndexRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/hydrants': typeof HydrantsRoute
   '/map': typeof MapRoute
+  '/devices/$id': typeof DevicesIdRoute
   '/households/$id': typeof HouseholdsIdRoute
   '/incidents/$id': typeof IncidentsIdRoute
   '/households': typeof HouseholdsIndexRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/hydrants': typeof HydrantsRoute
   '/map': typeof MapRoute
+  '/devices_/$id': typeof DevicesIdRoute
   '/households/$id': typeof HouseholdsIdRoute
   '/incidents/$id': typeof IncidentsIdRoute
   '/households/': typeof HouseholdsIndexRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/hydrants'
     | '/map'
+    | '/devices/$id'
     | '/households/$id'
     | '/incidents/$id'
     | '/households/'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/hydrants'
     | '/map'
+    | '/devices/$id'
     | '/households/$id'
     | '/incidents/$id'
     | '/households'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/hydrants'
     | '/map'
+    | '/devices_/$id'
     | '/households/$id'
     | '/incidents/$id'
     | '/households/'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   HydrantsRoute: typeof HydrantsRoute
   MapRoute: typeof MapRoute
+  DevicesIdRoute: typeof DevicesIdRoute
   HouseholdsIdRoute: typeof HouseholdsIdRoute
   IncidentsIdRoute: typeof IncidentsIdRoute
   HouseholdsIndexRoute: typeof HouseholdsIndexRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/devices_/$id': {
+      id: '/devices_/$id'
+      path: '/devices/$id'
+      fullPath: '/devices/$id'
+      preLoaderRoute: typeof DevicesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/households/': {
       id: '/households/'
       path: '/households'
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   HydrantsRoute: HydrantsRoute,
   MapRoute: MapRoute,
+  DevicesIdRoute: DevicesIdRoute,
   HouseholdsIdRoute: HouseholdsIdRoute,
   IncidentsIdRoute: IncidentsIdRoute,
   HouseholdsIndexRoute: HouseholdsIndexRoute,

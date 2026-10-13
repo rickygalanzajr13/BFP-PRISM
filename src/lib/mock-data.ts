@@ -1,6 +1,6 @@
 // DEMO DATA — all names, numbers and addresses are fictional.
 // Replace with API calls (see src/lib/store.ts) when the backend is available.
-import type { Device, Household, Incident, HazardType, RiskLevel, Outcome, RegisteredContact, AccessibilityTag } from "./types";
+import type { Device, Household, Incident, HazardType, RiskLevel, Outcome, RegisteredContact, AccessibilityTag, PowerEvent } from "./types";
 
 const H = (
   n: number, name: string, contact: string, address: string, barangay: string, landmark: string,
@@ -41,17 +41,45 @@ export const households: Household[] = baseHouseholds.map((h) => ({ ...h, regist
 const T = (h: number, m: number, day = "2026-09-29") => `${day}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+08:00`;
 
 const offline = new Set(["NODE-003", "NODE-009"]);
+// DEMO power telemetry: only nodes listed here are treated as having the power-sensing
+// hardware installed. All others show "Not installed / Unavailable".
+type PowerDemo = Pick<Device, "powerSource" | "batteryVoltage" | "batteryCondition" | "backupReadiness" | "externalPowerLostAt" | "lastPowerUpdateAt">;
+const powerDemo: Record<string, PowerDemo> = {
+  "NODE-001": { powerSource: "external", batteryVoltage: 4.12, batteryCondition: "normal", backupReadiness: "not_verified", externalPowerLostAt: null, lastPowerUpdateAt: T(10, 44) },
+  "NODE-002": { powerSource: "external", batteryVoltage: 3.58, batteryCondition: "low", backupReadiness: "not_verified", externalPowerLostAt: null, lastPowerUpdateAt: T(10, 44) },
+  "NODE-004": { powerSource: "battery", batteryVoltage: 3.86, batteryCondition: "normal", backupReadiness: "not_verified", externalPowerLostAt: T(10, 39), lastPowerUpdateAt: T(10, 44) },
+  "NODE-007": { powerSource: "battery", batteryVoltage: 3.61, batteryCondition: "low", backupReadiness: "not_verified", externalPowerLostAt: T(10, 12), lastPowerUpdateAt: T(10, 43) },
+  "NODE-009": { powerSource: "unknown", batteryVoltage: 3.32, batteryCondition: "critical", backupReadiness: "unknown", externalPowerLostAt: T(9, 20), lastPowerUpdateAt: T(9, 49) },
+};
+const noPower: PowerDemo = { powerSource: "unknown", batteryVoltage: null, batteryCondition: "unknown", backupReadiness: "unknown", externalPowerLostAt: null, lastPowerUpdateAt: null };
+
 export const devices: Device[] = households.map((hh, i) => ({
   id: hh.deviceId,
   householdId: hh.id,
   status: offline.has(hh.deviceId) ? "Offline" : "Online",
-  batteryLevel: [87, 92, 61, 74, 95, 81, 58, 90, 23, 77][i] ?? 80,
   lastSeen: offline.has(hh.deviceId) ? T(9, 58 - i) : T(10, 44),
   sensorStatus: offline.has(hh.deviceId)
     ? "Offline"
     : hh.deviceId === "NODE-004" ? "Critical"
     : hh.deviceId === "NODE-002" || hh.deviceId === "NODE-007" ? "Warning" : "Normal",
+  powerTelemetry: powerDemo[hh.deviceId] ? "supported" : "not_installed",
+  batteryPercentage: null, // no validated estimation method in firmware yet
+  ...(powerDemo[hh.deviceId] ?? noPower),
 }));
+
+const PE = (id: string, deviceId: string, type: PowerEvent["type"], at: string, rx: string | null, v: number | null, c: PowerEvent["batteryCondition"]): PowerEvent =>
+  ({ id, deviceId, type, occurredAt: at, receivedAt: rx, batteryVoltage: v, batteryCondition: c });
+export const initialPowerEvents: PowerEvent[] = [
+  PE("PE-0009", "NODE-004", "External Power Lost", T(10, 39), T(10, 39), 3.97, "normal"),
+  PE("PE-0008", "NODE-007", "Low Battery", T(10, 31), T(10, 31), 3.62, "low"),
+  PE("PE-0007", "NODE-007", "External Power Lost", T(10, 12), T(10, 13), 3.95, "normal"),
+  PE("PE-0006", "NODE-009", "Critical Battery", T(9, 47), null, 3.33, "critical"),
+  PE("PE-0005", "NODE-009", "Low Battery", T(9, 31), null, 3.58, "low"),
+  PE("PE-0004", "NODE-009", "External Power Lost", T(9, 20), T(9, 21), 3.94, "normal"),
+  PE("PE-0003", "NODE-002", "Low Battery", T(7, 5), T(7, 5), 3.6, "low"),
+  PE("PE-0002", "NODE-001", "External Power Restored", T(6, 2, "2026-09-28"), T(6, 2, "2026-09-28"), 3.91, "normal"),
+  PE("PE-0001", "NODE-001", "External Power Lost", T(4, 48, "2026-09-28"), T(4, 49, "2026-09-28"), 4.1, "normal"),
+];
 
 const hh = (id: string) => households.find((h) => h.id === id)!;
 

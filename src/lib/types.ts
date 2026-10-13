@@ -37,13 +37,41 @@ export interface Household {
   longitude: number;
 }
 
+// Hybrid power (wall adapter + LiPo backup). Values are reported by firmware/backend;
+// null means the reading is unavailable — never fabricate it in the UI.
+export type PowerSource = "external" | "battery" | "unavailable" | "unknown";
+export type BatteryCondition = "normal" | "low" | "critical" | "unknown";
+export type BackupReadiness = "verified" | "not_verified" | "unknown";
+/** Whether the node's hardware+firmware supports power telemetry. */
+export type PowerTelemetrySupport = "supported" | "not_installed";
+
 export interface Device {
   id: string;
   householdId: string;
   status: DeviceStatus;
-  batteryLevel: number;
-  lastSeen: string; // ISO
+  lastSeen: string; // ISO — last successful communication
   sensorStatus: SensorStatus;
+  powerTelemetry: PowerTelemetrySupport;
+  powerSource: PowerSource;
+  batteryVoltage: number | null;
+  batteryPercentage: number | null; // only when firmware implements a validated estimate
+  batteryCondition: BatteryCondition;
+  backupReadiness: BackupReadiness;
+  externalPowerLostAt: string | null;
+  lastPowerUpdateAt: string | null;
+}
+
+export type PowerEventType = "External Power Lost" | "External Power Restored" | "Low Battery" | "Critical Battery" | "Power Unavailable";
+
+/** Device power event — kept separate from fire/gas incidents and outcomes. */
+export interface PowerEvent {
+  id: string;
+  deviceId: string;
+  type: PowerEventType;
+  occurredAt: string; // timestamp recorded on the node
+  receivedAt: string | null; // null = recorded on node, awaiting synchronization
+  batteryVoltage: number | null;
+  batteryCondition: BatteryCondition;
 }
 
 export interface SensorReading {
